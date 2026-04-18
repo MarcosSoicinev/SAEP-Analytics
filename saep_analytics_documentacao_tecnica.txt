@@ -1,0 +1,1099 @@
+DOCUMENTO TÉCNICO DETALHADO — SAEP ANALYTICS
+Versão: Estrutura modular JavaScript reorganizada para manutenção, escalabilidade e clareza arquitetural
+Idioma: Português (Brasil)
+Objetivo deste documento: servir como material de contexto técnico completo para análise, continuidade, refatoração e evolução do projeto dentro do Claude Code ou qualquer outro ambiente de desenvolvimento assistido.
+
+=====================================================================
+1. VISÃO GERAL DO PROJETO
+=====================================================================
+
+O projeto SAEP Analytics é uma aplicação web front-end voltada à leitura, processamento e visualização de dados pedagógicos provenientes de planilhas Excel no contexto do SAEP. A aplicação foi estruturada para importar uma planilha contendo informações de desempenho de turma e desempenho individual por registro, transformar esses dados em estruturas internas padronizadas e exibir:
+
+1. Indicadores gerais da turma
+2. Desempenho por capacidade
+3. Matriz/ranking dos alunos
+4. Boletim individual do aluno
+5. Gráficos por capacidade e por conhecimento
+6. Diagnóstico pedagógico textual
+7. Exportação em PDF do aluno
+8. Exportação em PDF da turma
+9. Impressão do boletim individual
+
+A reorganização técnica realizada neste projeto teve como foco principal separar responsabilidades, mantendo comportamento, estilo visual e praticidade de uso. A intenção não foi reinventar a aplicação, mas melhorar sua estrutura para facilitar manutenção futura, novas implementações e leitura do código por terceiros.
+
+=====================================================================
+2. OBJETIVO DA REORGANIZAÇÃO
+=====================================================================
+
+Antes da reorganização, a lógica principal da aplicação estava concentrada em um único arquivo JavaScript. Esse modelo funcional resolve o problema inicial, porém apresenta limitações clássicas quando o projeto começa a crescer:
+
+- mistura de responsabilidades em um único arquivo
+- maior dificuldade para localizar bugs
+- dificuldade para alterar uma parte sem impactar outra
+- baixa legibilidade para novos colaboradores
+- aumento do acoplamento entre DOM, regras de negócio e dados
+- risco de regressão em manutenção
+- dificuldade de reutilização de código
+- maior custo cognitivo para compreender fluxos
+
+A reorganização teve os seguintes objetivos:
+
+1. Separar responsabilidades por contexto funcional
+2. Isolar a regra de negócio da camada de interface
+3. Reduzir acoplamento entre manipulação do DOM e cálculo de métricas
+4. Tornar o sistema mais inteligível para manutenção assistida por IA
+5. Preservar as integrações existentes com HTML, CSS e bibliotecas externas
+6. Manter a experiência do usuário sem alteração perceptível
+7. Preparar a base para futuras refatorações mais profundas
+
+=====================================================================
+3. METODOLOGIA UTILIZADA NA REORGANIZAÇÃO
+=====================================================================
+
+A metodologia aplicada na reorganização seguiu princípios de Clean Code, separação de responsabilidades e refatoração incremental sem ruptura funcional.
+
+3.1. Estratégia geral
+
+A abordagem escolhida foi:
+- manter o sistema 100% em JavaScript tradicional carregado por script tags
+- evitar introdução prematura de bundlers ou módulos ES complexos
+- separar o código em arquivos menores com coesão temática
+- respeitar as dependências entre arquivos por ordem de carregamento
+- preservar os IDs e estruturas principais do HTML
+- manter o CSS funcional sem necessidade imediata de revisão
+- garantir compatibilidade com as bibliotecas já utilizadas
+
+3.2. Critérios de separação dos arquivos
+
+A divisão dos arquivos foi feita com base em responsabilidade primária:
+
+- estado da aplicação
+- constantes e configuração derivada
+- utilidades puras
+- persistência em localStorage
+- leitura/parsing da planilha
+- regra de negócio SAEP
+- renderização de gráficos
+- renderização da visão geral
+- renderização da tela individual do aluno
+- geração de PDF
+- controle de upload e ações do usuário
+- bootstrap/inicialização do sistema
+
+3.3. Princípios aplicados
+
+Foram aplicados os seguintes princípios de projeto:
+
+A. SRP — Single Responsibility Principle
+Cada arquivo e cada função foram organizados para assumir um papel predominante e mais delimitado.
+
+B. DRY — Don’t Repeat Yourself
+Funções repetitivas de parsing, normalização, set de texto no DOM e recuperação de dados foram centralizadas.
+
+C. KISS — Keep It Simple, Stupid
+Foi evitado excesso de abstração desnecessária. A arquitetura permanece simples o bastante para uso imediato.
+
+D. Nomenclatura clara
+Os nomes das funções e estruturas foram escolhidos para revelar intenção e não apenas implementação.
+
+E. Separação entre domínio e apresentação
+A regra de negócio do SAEP foi deslocada para um serviço próprio, reduzindo dependência direta da interface.
+
+F. Refatoração sem quebra de contrato
+Os elementos HTML esperados pela aplicação foram preservados, assim como a semântica geral do fluxo.
+
+=====================================================================
+4. CONTEXTO FUNCIONAL DA APLICAÇÃO
+=====================================================================
+
+A aplicação possui duas páginas principais:
+
+1. index.html
+   Exibe a visão geral da turma.
+
+2. aluno.html
+   Exibe o boletim individual do aluno.
+
+Além disso, a aplicação utiliza um arquivo config.js que define:
+- cursos
+- nomes de capacidades
+- diagnósticos pedagógicos
+- cores
+
+A planilha importada deve conter abas específicas, com tolerância a pequenas variações de nome, permitindo que o sistema reconheça automaticamente as planilhas válidas.
+
+=====================================================================
+5. ESTRUTURA FINAL DO PROJETO
+=====================================================================
+
+Estrutura relevante do projeto:
+
+/
+├── index.html
+├── aluno.html
+├── config.js
+├── style.css
+└── js/
+    ├── app.js
+    ├── state.js
+    ├── constants.js
+    ├── utils.js
+    ├── storage-service.js
+    ├── spreadsheet-service.js
+    ├── saep-service.js
+    ├── chart-ui.js
+    ├── dashboard-ui.js
+    ├── student-ui.js
+    ├── pdf-service.js
+    └── upload-controller.js
+
+=====================================================================
+6. DESCRIÇÃO DETALHADA DA ESTRUTURA DE PASTAS E ARQUIVOS
+=====================================================================
+
+---------------------------------------------------------------------
+6.1. Arquivos de raiz
+---------------------------------------------------------------------
+
+6.1.1. index.html
+Objetivo:
+- representar a página de visão geral da turma
+
+Responsabilidades:
+- carregar bibliotecas externas necessárias
+- fornecer a estrutura de markup para KPIs, cards e tabela de ranking
+- oferecer input de upload e seletor de curso
+- carregar os scripts da aplicação na ordem correta
+
+Elementos relevantes:
+- #courseSelector
+- #uploadPlanilha
+- #kpi-media
+- #kpi-alunos
+- #kpi-aprovacao
+- #kpi-tempo
+- #kpi-melhor
+- #kpi-pior
+- #containerCapacidades
+- #tabelaCabecalho
+- #tabelaRanking
+
+Importância técnica:
+Esta página atua como destino da camada dashboard-ui.js. O contrato entre HTML e JavaScript depende da existência desses IDs.
+
+6.1.2. aluno.html
+Objetivo:
+- representar a página do boletim individual do aluno
+
+Responsabilidades:
+- apresentar cabeçalho do aluno
+- exibir métricas individuais
+- renderizar gráficos
+- exibir diagnóstico pedagógico
+- permitir exportação em PDF e impressão
+- carregar a mesma base de scripts, com foco na student-ui.js e pdf-service.js
+
+Elementos relevantes:
+- #studentSelector
+- #studentHeader
+- #initials
+- #studentName
+- #regNumber
+- #totalScore
+- #hits
+- #misses
+- #time
+- #statusLabel
+- #studentCapChart
+- #studentKnowledgeChart
+- #diagnosticBox
+- #diagnosticText
+- #btnPdfAluno
+- #btnPdfTurma
+- #btnPrintBoletim
+- #boletimPrintArea
+
+Importância técnica:
+É a página que concentra as funcionalidades individuais e o fluxo de exportação.
+
+6.1.3. config.js
+Objetivo:
+- funcionar como camada externa de configuração pedagógica e semântica
+
+Responsabilidades:
+- definir cores
+- definir cursos disponíveis
+- definir escala de proficiência
+- definir nomes humanizados das capacidades
+- definir textos de orientação pedagógica por capacidade
+
+Valor arquitetural:
+Este arquivo é importante porque evita hardcode de nomes pedagógicos dentro da regra operacional. Ele atua como uma fonte externa de parametrização.
+
+6.1.4. style.css
+Objetivo:
+- controlar toda a aparência visual da aplicação
+
+Responsabilidades:
+- layout geral
+- responsividade
+- tipografia
+- grid dos cards
+- tabela
+- cabeçalhos
+- visual de impressão
+- estilo dos componentes da página do aluno e da visão geral
+
+Observação:
+Embora ainda não tenha sido reorganizado na etapa atual, ele foi mantido compatível com a nova arquitetura JS. A decisão correta foi reorganizar primeiro a camada JavaScript, pois era o ponto de maior complexidade estrutural.
+
+---------------------------------------------------------------------
+6.2. Pasta /js
+---------------------------------------------------------------------
+
+A pasta /js concentra o comportamento da aplicação. Os arquivos foram divididos por contexto e responsabilidade, mas continuam operando em modo global por script tag, respeitando a ordem de carregamento.
+
+=====================================================================
+7. DESCRIÇÃO DETALHADA DOS ARQUIVOS DA PASTA /js
+=====================================================================
+
+---------------------------------------------------------------------
+7.1. js/state.js
+---------------------------------------------------------------------
+
+Objetivo:
+Centralizar o estado global da aplicação em um único objeto.
+
+Conteúdo principal:
+- ApplicationState
+
+Estrutura:
+- studentSummaries
+- answerRecords
+- selectedStudent
+- charts.capacityChart
+- charts.knowledgeChart
+
+Responsabilidade:
+Este arquivo existe para evitar variáveis globais soltas e manter um ponto único para dados temporários da aplicação.
+
+Motivação técnica:
+Sem esse arquivo, seria comum espalhar variáveis como lista de alunos, registros, aluno atual e instâncias de gráfico em vários pontos. Isso prejudica legibilidade, manutenção e previsibilidade.
+
+Benefícios:
+- simplifica a leitura do estado da aplicação
+- facilita restauração e atualização de dados
+- centraliza dependências de outras camadas
+
+Riscos se mal utilizado:
+- virar um “estado-deus” com muitos dados não relacionados
+- acoplar demais o sistema a estrutura global mutável
+
+Recomendação futura:
+Se a aplicação crescer, pode-se evoluir para um padrão mais formal de gerenciamento de estado, mas no momento o objeto centralizado é suficiente e proporcional.
+
+---------------------------------------------------------------------
+7.2. js/constants.js
+---------------------------------------------------------------------
+
+Objetivo:
+Armazenar constantes fixas, aliases e fallback de configuração.
+
+Conteúdos principais:
+- STORAGE_KEYS
+- DEFAULT_COLORS
+- COLOR_CONFIG
+- COURSE_CONFIG
+- WorkbookSheetAliases
+- SummaryColumnAliases
+- RecordColumnAliases
+
+Responsabilidade:
+Remover “strings mágicas” do código e concentrar convenções de leitura e persistência em um único local.
+
+Detalhes importantes:
+
+A. STORAGE_KEYS
+Guarda as chaves utilizadas no localStorage:
+- students
+- records
+- course
+
+B. DEFAULT_COLORS
+Define o conjunto padrão de cores caso config.js não forneça dados.
+
+C. COLOR_CONFIG
+Seleciona as cores reais a partir de SAEP_CONFIG ou fallback.
+
+D. COURSE_CONFIG
+Seleciona a configuração de cursos carregada do config.js.
+
+E. WorkbookSheetAliases
+Lista nomes possíveis para as abas esperadas da planilha.
+
+F. SummaryColumnAliases
+Lista nomes possíveis das colunas da aba resumo.
+
+G. RecordColumnAliases
+Lista nomes possíveis das colunas da aba por registro.
+
+Valor arquitetural:
+Esse arquivo reduz o impacto de mudanças de nomenclatura e torna o parsing mais robusto.
+
+Benefícios:
+- manutenção concentrada
+- maior tolerância a variações de planilha
+- menor repetição
+
+---------------------------------------------------------------------
+7.3. js/utils.js
+---------------------------------------------------------------------
+
+Objetivo:
+Concentrar utilidades puras e helpers genéricos não específicos do domínio SAEP.
+
+Funções presentes:
+- getElementByIdOrNull
+- setTextContentIfElementExists
+- setHtmlContentIfElementExists
+- normalizeText
+- normalizeHeaderName
+- parseNumber
+- parseCapacityCode
+- sanitizeFileName
+- convertTimeToMinutes
+- calculateAverageTime
+- setButtonLoadingState
+- restoreButtonState
+
+Responsabilidade:
+Fornecer pequenas funções reutilizáveis para:
+- acesso ao DOM
+- normalização
+- parsing
+- formatação operacional
+- controle visual de loading em botões
+
+Descrição detalhada das funções:
+
+1. getElementByIdOrNull(elementId)
+Busca um elemento por ID no DOM.
+Retorno:
+- HTMLElement quando existe
+- null quando não existe
+
+Uso:
+Usado em praticamente toda a camada de UI.
+
+2. setTextContentIfElementExists(elementId, value)
+Seta innerText com segurança, apenas se o elemento existir.
+
+3. setHtmlContentIfElementExists(elementId, htmlContent)
+Seta innerHTML com segurança, apenas se o elemento existir.
+
+4. normalizeText(value)
+Converte qualquer valor para string limpa e removida de espaços laterais.
+
+5. normalizeHeaderName(headerName)
+Normaliza strings de cabeçalho:
+- remove acentos
+- reduz espaços
+- converte para minúsculas
+
+6. parseNumber(value)
+Transforma strings numéricas da planilha em número.
+Suporta:
+- porcentagem
+- vírgula decimal
+- vazio
+
+7. parseCapacityCode(rawValue)
+Padroniza valores de capacidade para o formato C1, C2, C3 etc.
+
+8. sanitizeFileName(fileName)
+Remove caracteres problemáticos para uso em nome de arquivo exportado.
+
+9. convertTimeToMinutes(timeValue)
+Converte tempo em formatos aceitos para minutos.
+
+10. calculateAverageTime(timeValues)
+Calcula média de tempos válidos e retorna string formatada.
+
+11. setButtonLoadingState(buttonElement, loadingHtml)
+Ativa estado visual de carregamento no botão.
+
+12. restoreButtonState(buttonElement, originalHtml)
+Restaura estado original do botão.
+
+Valor arquitetural:
+Este arquivo diminui repetição e mantém as demais camadas mais enxutas.
+
+---------------------------------------------------------------------
+7.4. js/storage-service.js
+---------------------------------------------------------------------
+
+Objetivo:
+Isolar toda interação da aplicação com localStorage.
+
+Funções presentes:
+- getSavedCourseKey
+- saveSelectedCourse
+- clearStoredSpreadsheetData
+- saveSpreadsheetDataToStorage
+- loadSpreadsheetDataFromStorage
+
+Responsabilidade:
+Persistir dados simples entre reloads do navegador.
+
+Descrição das funções:
+
+1. getSavedCourseKey()
+Lê do localStorage a chave do curso atualmente salvo.
+
+2. saveSelectedCourse(courseKey)
+Salva a chave do curso no localStorage.
+
+3. clearStoredSpreadsheetData()
+Remove os dados da planilha anteriormente armazenados.
+
+4. saveSpreadsheetDataToStorage()
+Salva no storage os dados atuais do ApplicationState:
+- studentSummaries
+- answerRecords
+
+5. loadSpreadsheetDataFromStorage()
+Lê o localStorage e injeta os dados de volta no ApplicationState.
+
+Valor arquitetural:
+Evita espalhar chamadas de localStorage por múltiplos arquivos e facilita futura troca de mecanismo de persistência.
+
+Risco evitado:
+Sem esse serviço, qualquer arquivo poderia salvar ou recuperar dados livremente, aumentando acoplamento.
+
+---------------------------------------------------------------------
+7.5. js/spreadsheet-service.js
+---------------------------------------------------------------------
+
+Objetivo:
+Ler a planilha importada, encontrar as abas corretas, interpretar colunas e retornar objetos estruturados.
+
+Funções presentes:
+- findWorksheetByPossibleNames
+- getColumnValue
+- buildStudentSummary
+- buildAnswerRecord
+- validateImportedSpreadsheetData
+- readSpreadsheetData
+
+Responsabilidade:
+Converter o conteúdo bruto do arquivo Excel em dados internos confiáveis.
+
+Descrição das funções:
+
+1. findWorksheetByPossibleNames(workbook, possibleNames)
+Procura uma aba do workbook com base em lista de nomes possíveis normalizados.
+
+2. getColumnValue(rowData, possibleColumnNames)
+Procura um valor em um objeto-linha considerando múltiplos nomes alternativos de coluna.
+
+3. buildStudentSummary(summaryRow)
+Converte uma linha da aba resumo em um objeto padronizado de aluno.
+
+Campos gerados:
+- nome
+- matricula
+- desempenho
+- acertos
+- erros
+- tempo
+- proficiencia
+- nivelSAEP
+
+4. buildAnswerRecord(recordRow)
+Converte uma linha da aba de registros em um objeto analítico.
+
+Campos gerados:
+- aluno
+- matricula
+- cap
+- conhecimento
+- acertou
+
+5. validateImportedSpreadsheetData(studentSummaries, answerRecords)
+Valida o resultado da importação e lança erro em caso de ausência de conteúdo relevante.
+
+6. readSpreadsheetData(fileBuffer)
+Função orquestradora da leitura da planilha.
+Etapas:
+- cria workbook via XLSX
+- encontra abas esperadas
+- transforma abas em JSON
+- converte cada linha em objeto interno
+- valida o resultado
+- retorna estrutura final
+
+Valor arquitetural:
+Este arquivo isola completamente a complexidade da planilha e protege o restante da aplicação do formato bruto do Excel.
+
+Ponto forte:
+A tolerância a aliases de nomes de abas e colunas torna o sistema mais robusto.
+
+---------------------------------------------------------------------
+7.6. js/saep-service.js
+---------------------------------------------------------------------
+
+Objetivo:
+Concentrar a regra de negócio do domínio SAEP e da leitura pedagógica do sistema.
+
+Funções presentes:
+- getSelectedCourseConfig
+- populateCourseSelector
+- getCapacityDisplayName
+- getCapacityPedagogicalGuidance
+- getLevelByProficiency
+- getLevelByPerformance
+- getStudentSaepLevel
+- getLevelColor
+- getLevelDescription
+- buildClassroomAnalysisStructures
+- getOrderedStudentsByName
+- calculateStudentCapacityPerformance
+- calculateStudentKnowledgePerformance
+- getPerformanceExtremes
+
+Responsabilidade:
+Aplicar as regras que determinam:
+- nível SAEP
+- nomes pedagógicos
+- diagnósticos
+- agregações da turma
+- agregações individuais
+
+Descrição das funções:
+
+1. getSelectedCourseConfig()
+Retorna a configuração do curso salvo.
+
+2. populateCourseSelector()
+Monta o seletor de cursos no HTML usando COURSE_CONFIG.
+
+3. getCapacityDisplayName(capacityCode)
+Retorna o nome pedagógico da capacidade.
+
+4. getCapacityPedagogicalGuidance(capacityCode)
+Retorna a orientação pedagógica da capacidade.
+
+5. getLevelByProficiency(proficiency)
+Classifica o nível SAEP a partir da proficiência.
+
+6. getLevelByPerformance(performance)
+Classifica o nível SAEP a partir do desempenho percentual.
+
+7. getStudentSaepLevel(studentOrScore)
+Função central que decide qual regra usar:
+- proficiência, se existir
+- desempenho, caso contrário
+
+8. getLevelColor(level)
+Retorna a cor correspondente ao nível.
+
+9. getLevelDescription(level)
+Retorna o texto interpretativo do nível.
+
+10. buildClassroomAnalysisStructures()
+Agrega os registros em estruturas de turma:
+- sortedCapacityCodes
+- performanceByCapacity
+- studentCapacityPerformance
+
+11. getOrderedStudentsByName()
+Retorna os alunos ordenados alfabeticamente.
+
+12. calculateStudentCapacityPerformance(studentName)
+Calcula desempenho do aluno por capacidade.
+
+13. calculateStudentKnowledgePerformance(studentName)
+Calcula desempenho do aluno por conhecimento.
+
+14. getPerformanceExtremes(labels, values)
+Identifica item com melhor e pior desempenho.
+
+Valor arquitetural:
+Este é o arquivo mais próximo do “domínio” do sistema. Ele deve conter decisões conceituais do SAEP, não detalhes de interface.
+
+Relevância:
+É o coração semântico do projeto.
+
+---------------------------------------------------------------------
+7.7. js/chart-ui.js
+---------------------------------------------------------------------
+
+Objetivo:
+Isolar a criação e destruição de gráficos Chart.js.
+
+Funções presentes:
+- destroyChartIfExists
+- renderHorizontalBarChart
+
+Responsabilidade:
+Padronizar a renderização dos gráficos e impedir acúmulo de instâncias.
+
+Descrição das funções:
+
+1. destroyChartIfExists(chartInstance)
+Destrói um gráfico se ele existir.
+
+2. renderHorizontalBarChart(canvasId, labels, values, datasetLabel)
+Cria um gráfico horizontal de barras.
+Características:
+- eixo 0 a 100
+- barras coloridas conforme nível
+- sem legenda
+- responsivo
+
+Valor arquitetural:
+Mantém a biblioteca Chart.js encapsulada em um arquivo especializado.
+
+---------------------------------------------------------------------
+7.8. js/dashboard-ui.js
+---------------------------------------------------------------------
+
+Objetivo:
+Renderizar a página de visão geral da turma.
+
+Funções presentes:
+- renderGeneralKpis
+- buildKnowledgeHighlightsHtml
+- renderCapacityCards
+- buildRankingTableHeader
+- buildRankingTableRows
+- renderRankingMatrix
+- initializeDashboardPage
+
+Responsabilidade:
+Transformar os dados já calculados em interface visual da página index.html.
+
+Descrição das funções:
+
+1. renderGeneralKpis()
+Calcula e exibe:
+- média geral
+- total de alunos
+- aprovação
+- tempo médio
+- melhor desempenho
+- pior desempenho
+
+2. buildKnowledgeHighlightsHtml(knowledgeEntries)
+Monta o HTML dos conhecimentos exibidos nos cards.
+
+3. renderCapacityCards(classroomAnalysis)
+Monta os cards por capacidade.
+
+4. buildRankingTableHeader(sortedCapacityCodes)
+Cria o cabeçalho dinâmico da tabela de ranking.
+
+5. buildRankingTableRows(classroomAnalysis)
+Monta as linhas da tabela.
+
+6. renderRankingMatrix(classroomAnalysis)
+Aplica cabeçalho e corpo da tabela ao DOM.
+
+7. initializeDashboardPage()
+Inicializa toda a visão geral.
+
+Valor arquitetural:
+Separa a renderização da visão geral das regras de cálculo.
+
+---------------------------------------------------------------------
+7.9. js/student-ui.js
+---------------------------------------------------------------------
+
+Objetivo:
+Renderizar a página individual do aluno.
+
+Funções presentes:
+- getStudentInitials
+- updateStudentHeader
+- renderStudentPedagogicalDiagnosis
+- renderStudentCharts
+- renderSelectedStudent
+- populateStudentSelector
+- initializeStudentPage
+
+Responsabilidade:
+Atualizar toda a interface da página aluno.html.
+
+Descrição das funções:
+
+1. getStudentInitials(studentName)
+Gera as iniciais do nome do aluno.
+
+2. updateStudentHeader(studentSummary)
+Atualiza cabeçalho do aluno e seus dados principais.
+
+3. renderStudentPedagogicalDiagnosis(studentSummary, capacityPerformance, knowledgePerformance)
+Monta e renderiza o diagnóstico pedagógico textual.
+
+4. renderStudentCharts(studentSummary)
+Atualiza os gráficos do aluno.
+
+5. renderSelectedStudent(studentSummary)
+Função central de renderização do aluno selecionado.
+
+6. populateStudentSelector(students)
+Monta o select com os alunos e conecta a troca de seleção.
+
+7. initializeStudentPage()
+Inicializa a página do aluno.
+
+Valor arquitetural:
+Centraliza a lógica de apresentação individual em um arquivo específico.
+
+---------------------------------------------------------------------
+7.10. js/pdf-service.js
+---------------------------------------------------------------------
+
+Objetivo:
+Centralizar toda a lógica de exportação PDF da aplicação.
+
+Funções presentes:
+- captureStudentReportCanvas
+- addCanvasToLandscapePdf
+- generateStudentVisualPdf
+- drawPdfHeader
+- drawPdfFooter
+- drawPdfInfoCard
+- drawPdfSectionTitle
+- buildCapacityTableForPdf
+- buildKnowledgeTableForPdf
+- getPdfLevelColor
+- buildStudentDiagnosisSummaryForPdf
+- generateClassroomVisualPdf
+
+Responsabilidade:
+Gerar o PDF do aluno e o PDF completo da turma.
+
+Descrição das funções:
+
+1. captureStudentReportCanvas()
+Captura a área visual do boletim via html2canvas.
+
+2. addCanvasToLandscapePdf(pdfDocument, canvas)
+Insere canvas em página A4 landscape.
+
+3. generateStudentVisualPdf(studentSummary)
+Gera o PDF visual do aluno a partir da interface capturada.
+
+4. drawPdfHeader(pdfDocument, title, subtitle)
+Desenha o cabeçalho do PDF da turma.
+
+5. drawPdfFooter(pdfDocument, footerLabel)
+Desenha rodapé com paginação.
+
+6. drawPdfInfoCard(...)
+Desenha blocos de informação no PDF.
+
+7. drawPdfSectionTitle(pdfDocument, title, positionY)
+Desenha o título visual de cada seção.
+
+8. buildCapacityTableForPdf(studentName)
+Gera dados tabulares de capacidade para o PDF.
+
+9. buildKnowledgeTableForPdf(studentName)
+Gera dados tabulares de conhecimento para o PDF.
+
+10. getPdfLevelColor(saepLevel)
+Traduz nível em RGB para jsPDF.
+
+11. buildStudentDiagnosisSummaryForPdf(studentSummary)
+Resume diagnóstico do aluno para uso no PDF da turma.
+
+12. generateClassroomVisualPdf(orderedStudents)
+Gera o PDF completo da turma, uma página por aluno.
+
+Valor arquitetural:
+Esse arquivo concentra uma responsabilidade tecnicamente densa e dependente de bibliotecas externas, por isso foi corretamente isolado.
+
+---------------------------------------------------------------------
+7.11. js/upload-controller.js
+---------------------------------------------------------------------
+
+Objetivo:
+Controlar ações disparadas pelo usuário relacionadas a upload, PDF e impressão.
+
+Funções presentes:
+- updateApplicationData
+- handleSpreadsheetUpload
+- configureSpreadsheetUpload
+- configurePdfButtons
+- configurePrintButton
+
+Responsabilidade:
+Orquestrar interações entre arquivos de dados, estado e interface.
+
+Descrição das funções:
+
+1. updateApplicationData(studentSummaries, answerRecords)
+Atualiza estado e storage com novos dados.
+
+2. handleSpreadsheetUpload(file)
+Processa o arquivo importado.
+
+3. configureSpreadsheetUpload()
+Conecta o input de upload ao processamento.
+
+4. configurePdfButtons(orderedStudents)
+Conecta os botões de exportação.
+
+5. configurePrintButton()
+Conecta o botão de impressão.
+
+Valor arquitetural:
+Funciona como camada de orquestração de eventos.
+
+---------------------------------------------------------------------
+7.12. js/app.js
+---------------------------------------------------------------------
+
+Objetivo:
+Atuar como bootstrap da aplicação.
+
+Funções presentes:
+- isDashboardPage
+- isStudentPage
+- initializeApplication
+
+Responsabilidade:
+Decidir o que inicializar com base na página atual.
+
+Descrição das funções:
+
+1. isDashboardPage()
+Detecta se a página atual é a visão geral.
+
+2. isStudentPage()
+Detecta se a página atual é a página do aluno.
+
+3. initializeApplication()
+Fluxo principal:
+- carrega dados persistidos
+- popula seletor de curso
+- configura upload
+- inicializa dashboard, se necessário
+- inicializa página do aluno, se necessário
+
+Valor arquitetural:
+Evita que cada página precise de um script totalmente diferente. O bootstrap central decide o comportamento pela presença de elementos.
+
+=====================================================================
+8. FLUXO OPERACIONAL DA APLICAÇÃO
+=====================================================================
+
+8.1. Fluxo de carregamento
+1. O navegador carrega config.js
+2. Os arquivos JS são carregados em ordem
+3. app.js executa initializeApplication()
+4. O sistema:
+   - lê dados do localStorage
+   - popula o seletor de curso
+   - ativa o upload
+   - detecta a página atual
+   - renderiza a interface correspondente
+
+8.2. Fluxo de upload
+1. Usuário seleciona planilha
+2. upload-controller.js captura o evento
+3. spreadsheet-service.js lê o arquivo
+4. dados são transformados em estruturas internas
+5. ApplicationState é atualizado
+6. dados são persistidos no localStorage
+7. a página é recarregada
+
+8.3. Fluxo da visão geral
+1. dashboard-ui.js solicita estruturas agregadas à camada de negócio
+2. renderiza KPIs
+3. renderiza cards por capacidade
+4. renderiza tabela/ranking
+
+8.4. Fluxo da página do aluno
+1. student-ui.js popula o seletor
+2. usuário escolhe um aluno
+3. o sistema atualiza o cabeçalho
+4. gera os gráficos
+5. monta o diagnóstico pedagógico
+
+8.5. Fluxo de PDF
+1. usuário clica em PDF
+2. o botão entra em loading
+3. o pdf-service.js executa a geração
+4. o arquivo é salvo
+5. o botão retorna ao estado normal
+
+=====================================================================
+9. DEPENDÊNCIAS EXTERNAS
+=====================================================================
+
+O sistema depende de bibliotecas externas carregadas por CDN:
+
+1. Tailwind CSS
+Uso:
+- apoio visual/utilitário de classes
+
+2. Chart.js
+Uso:
+- gráficos horizontais de barras
+
+3. XLSX
+Uso:
+- leitura da planilha Excel
+
+4. jsPDF
+Uso:
+- geração de PDF
+
+5. jsPDF AutoTable
+Uso:
+- tabelas dentro do PDF da turma
+
+6. html2canvas
+Uso:
+- captura visual do boletim do aluno para PDF
+
+7. Font Awesome
+Uso:
+- ícones da interface
+
+Observação:
+Essas bibliotecas estão carregadas diretamente no HTML, antes da camada da aplicação.
+
+=====================================================================
+10. ORDEM DE CARREGAMENTO DOS SCRIPTS
+=====================================================================
+
+A ordem correta é crítica, pois os arquivos não usam import/export nativo, e sim escopo global compartilhado:
+
+1. config.js
+2. js/state.js
+3. js/constants.js
+4. js/utils.js
+5. js/storage-service.js
+6. js/spreadsheet-service.js
+7. js/saep-service.js
+8. js/chart-ui.js
+9. js/dashboard-ui.js
+10. js/student-ui.js
+11. js/pdf-service.js
+12. js/upload-controller.js
+13. js/app.js
+
+Motivo:
+Arquivos posteriores dependem de funções e estruturas definidas nos anteriores.
+
+=====================================================================
+11. DECISÕES ARQUITETURAIS IMPORTANTES
+=====================================================================
+
+1. Não migrar imediatamente para módulos ES
+Motivo:
+A prioridade foi reorganizar sem introduzir complexidade de build, bundler ou ambiente adicional.
+
+2. Manter script tags com ordem controlada
+Motivo:
+Maior praticidade para uso imediato.
+
+3. Preservar IDs do HTML
+Motivo:
+Evitar quebra de contrato entre front e JS.
+
+4. Manter CSS intacto na etapa atual
+Motivo:
+O problema estrutural principal estava no JavaScript.
+
+5. Centralizar regra de negócio em saep-service.js
+Motivo:
+Evitar espalhamento de lógica pedagógica.
+
+6. Centralizar parsing da planilha em spreadsheet-service.js
+Motivo:
+Separar formato bruto do dado da regra de negócio.
+
+=====================================================================
+12. BENEFÍCIOS OBTIDOS COM A REORGANIZAÇÃO
+=====================================================================
+
+- melhor legibilidade geral
+- menor acoplamento
+- maior facilidade para manutenção assistida por IA
+- maior previsibilidade de mudança
+- separação entre parsing, negócio, UI e exportação
+- possibilidade de testar cada camada com mais clareza
+- menor risco de alterações quebrando partes não relacionadas
+
+=====================================================================
+13. LIMITAÇÕES ATUAIS
+=====================================================================
+
+Mesmo reorganizado, o projeto ainda possui limitações naturais:
+
+1. Escopo global compartilhado
+Os arquivos ainda compartilham funções no escopo global.
+
+2. Ausência de testes automatizados
+Ainda não há suíte de testes.
+
+3. Dependência forte de IDs do HTML
+A interface ainda depende da estrutura de IDs fixos.
+
+4. CSS ainda não modularizado
+A camada visual ainda é monolítica.
+
+5. Recarregamento após upload
+A aplicação ainda faz reload após importar dados.
+
+6. Acoplamento leve entre UI e regra
+Melhorou bastante, mas ainda existe dependência funcional natural.
+
+=====================================================================
+14. OPORTUNIDADES DE EVOLUÇÃO FUTURA
+=====================================================================
+
+1. Modularização com ES Modules
+2. Testes unitários da regra SAEP
+3. Testes de leitura da planilha
+4. Reorganização do CSS por componentes
+5. Extração de templates HTML para funções dedicadas
+6. Eliminação do reload após upload
+7. Introdução de camada de logs/erros mais robusta
+8. Validações mais sofisticadas da planilha
+9. Normalização de nomes de alunos por matrícula
+10. Internacionalização futura, se necessário
+
+=====================================================================
+15. RECOMENDAÇÕES PARA O CLAUDE CODE
+=====================================================================
+
+Ao continuar a evolução desse projeto no Claude Code, considere as seguintes diretrizes:
+
+1. Manter a separação de responsabilidades atual
+2. Evitar recolocar parsing, UI e regra no mesmo arquivo
+3. Preservar a ordem dos scripts caso continue em script tags
+4. Ao alterar o HTML, verificar todos os IDs esperados
+5. Ao alterar a leitura da planilha, revisar aliases em constants.js
+6. Ao alterar regra pedagógica, priorizar saep-service.js e config.js
+7. Ao alterar PDF, priorizar pdf-service.js
+8. Ao alterar dashboard, priorizar dashboard-ui.js
+9. Ao alterar boletim individual, priorizar student-ui.js
+10. Ao alterar persistência, priorizar storage-service.js
+
+=====================================================================
+16. RESUMO EXECUTIVO
+=====================================================================
+
+O projeto SAEP Analytics foi reorganizado com foco em clareza arquitetural e manutenção. A base funcional foi preservada, mas a estrutura JavaScript passou a ser separada por responsabilidade, com arquivos dedicados para estado, constantes, utilidades, storage, parsing da planilha, regra de negócio, gráficos, interface da visão geral, interface do aluno, PDF, controle de upload e bootstrap da aplicação.
+
+Essa reorganização melhora significativamente a inteligibilidade do projeto sem impor ferramentas adicionais de build, mantendo a praticidade do front-end estático e preparando o sistema para futuras melhorias mais profundas.
+
+=====================================================================
+17. FIM DO DOCUMENTO
+=====================================================================

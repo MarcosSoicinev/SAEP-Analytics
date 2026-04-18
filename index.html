@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SAEP Analytics - Visão Geral</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="saep-body">
+
+  <nav class="saep-navbar">
+    <div class="saep-container nav-inner">
+      <div class="nav-left">
+        <div class="brand-wrap">
+          <div class="brand-icon">
+            <i class="fa-solid fa-chart-column"></i>
+          </div>
+          <div class="brand-text">
+            <span class="brand-main">SAEP</span><span class="brand-accent"> Analytics</span>
+          </div>
+        </div>
+
+        <div class="nav-links">
+          <a href="index.html" class="nav-link active">
+            <i class="fa-solid fa-users"></i>
+            <span>Visão da Turma</span>
+          </a>
+          <a href="aluno.html" class="nav-link">
+            <i class="fa-solid fa-user-graduate"></i>
+            <span>Portal Individual</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="nav-right" style="display:flex; align-items:center; gap:12px;">
+        <select id="courseSelector" class="student-select" style="min-width:240px; height:44px;"></select>
+
+
+        <label for="uploadConfig" class="upload-btn" title="Importar configuração anual de cursos">
+          <i class="fa-solid fa-gear text-violet-600"></i>
+          <span>Atualizar Config</span>
+        </label>
+        <input type="file" id="uploadConfig" accept=".xlsx" class="hidden">
+        <label for="uploadPlanilha" class="upload-btn">
+          <i class="fa-solid fa-file-excel text-emerald-600"></i>
+          <span>Importar Planilha</span>
+        </label>
+
+        <input type="file" id="uploadPlanilha" accept=".xlsx" class="hidden">
+      </div>
+    </div>
+  </nav>
+
+  <main class="saep-container page-space">
+    <section class="page-header">
+      <div>
+        <h1 class="page-title">Visão Geral da Turma</h1>
+        <p class="page-subtitle">Acompanhe indicadores, capacidades avaliadas e ranking de desempenho.</p>
+      </div>
+    </section>
+
+    <section class="kpi-grid">
+      <div class="saep-card kpi-card border-blue">
+        <p class="kpi-label">Média Geral</p>
+        <p id="kpi-media" class="kpi-value text-blue">0%</p>
+      </div>
+
+      <div class="saep-card kpi-card border-indigo">
+        <p class="kpi-label">Alunos</p>
+        <p id="kpi-alunos" class="kpi-value text-indigo">0</p>
+      </div>
+
+      <div class="saep-card kpi-card border-green">
+        <p class="kpi-label">Aprovação</p>
+        <p id="kpi-aprovacao" class="kpi-value text-green">0%</p>
+      </div>
+
+      <div class="saep-card kpi-card border-amber">
+        <p class="kpi-label">Tempo Médio</p>
+        <p id="kpi-tempo" class="kpi-value text-amber">0m</p>
+      </div>
+
+      <div class="saep-card kpi-card double-kpi">
+        <div>
+          <p class="kpi-label">Melhor</p>
+          <p id="kpi-melhor" class="kpi-mini text-green">0%</p>
+        </div>
+        <div>
+          <p class="kpi-label">Pior</p>
+          <p id="kpi-pior" class="kpi-mini text-red">0%</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="saep-card section-card">
+      <div class="section-title-wrap">
+        <h2 class="section-title">
+          <i class="fa-solid fa-layer-group"></i>
+          <span>Desempenho por Capacidade Avaliada</span>
+        </h2>
+      </div>
+
+      <div id="containerCapacidades" class="capacity-grid"></div>
+    </section>
+
+    <section class="saep-card section-card table-card">
+      <div class="section-title-wrap">
+        <h2 class="section-title">
+          <i class="fa-solid fa-ranking-star"></i>
+          <span>Matriz de Desempenho e Ranking</span>
+        </h2>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="saep-table">
+          <thead id="tabelaCabecalho"></thead>
+          <tbody id="tabelaRanking">
+            <tr>
+              <td class="empty-state">Aguardando importação da planilha...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+
+  <script src="js/state.js"></script>
+  <script src="js/constants.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/storage-service.js"></script>
+  <script src="js/spreadsheet-service.js"></script>
+  <script src="js/saep-service.js"></script>
+  <script src="js/chart-ui.js"></script>
+  <script src="js/dashboard-ui.js"></script>
+  <script src="js/student-ui.js"></script>
+  <script src="js/pdf-service.js"></script>
+  <script src="js/upload-controller.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
